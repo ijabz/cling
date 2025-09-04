@@ -138,6 +138,7 @@ public class SOAPActionProcessorImpl implements SOAPActionProcessor, ErrorHandle
             readBodyRequest(d, bodyElement, requestMessage, actionInvocation);
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new UnsupportedDataException("Can't transform message payload: " + ex, ex, body);
         }
     }
@@ -152,6 +153,17 @@ public class SOAPActionProcessorImpl implements SOAPActionProcessor, ErrorHandle
         }
 
         String body = getMessageBody(responseMsg);
+        if (body!=null) {
+            if (body.contains("18446744073709551615")) {
+                //Fixed for Media Monkey returning invalid RelCount/AbsCount for getInfoPositioin() calls retunrns
+                //max value for long but field is only defined as integer
+                body = body
+                        .replace("<RelCount>18446744073709551615</RelCount>", "<RelCount>0</RelCount>")
+                        .replace("<AbsCount>18446744073709551615</AbsCount>", "<AbsCount>9</AbsCount>");
+                System.out.println("Patched invalid RelCount/AbsCount in SOAP response.");
+            }
+        }
+
         try {
 
             DocumentBuilderFactory factory = createDocumentBuilderFactory();
@@ -172,6 +184,7 @@ public class SOAPActionProcessorImpl implements SOAPActionProcessor, ErrorHandle
             }
 
         } catch (Exception ex) {
+            ex.printStackTrace();
     		throw new UnsupportedDataException("Can't transform message payload: " + ex, ex, body);
         }
     }
